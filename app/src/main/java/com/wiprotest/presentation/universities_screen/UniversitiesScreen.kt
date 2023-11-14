@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Text
@@ -19,11 +21,14 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +44,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 @InternalCoroutinesApi
 @ExperimentalCoroutinesApi
@@ -48,6 +54,7 @@ fun UniversitiesScreen(
 ) {
     val context = LocalContext.current
     var userInputCountry by remember { mutableStateOf(TextFieldValue("India")) }
+    val keyboardController = LocalSoftwareKeyboardController.current
     var monthYear: String by rememberSaveable {
         mutableStateOf("")
     }
@@ -65,16 +72,20 @@ fun UniversitiesScreen(
         ) {
             TextField(
                 value = userInputCountry,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {keyboardController?.hide()}),
                 onValueChange = {
                     userInputCountry = it
                 },
                 colors = TextFieldDefaults.textFieldColors(textColor = Color.White),
-            label = { Text(text = "Country", color = Color.White) },
+                label = { Text(text = "Country", color = Color.White) },
                 placeholder = { Text(text = "Enter Country", color = Color.White) },
             )
             Button(
                 onClick = {
-                    viewModel.fetchUniversities(context, "India")
+                    keyboardController?.hide()
+                    viewModel.fetchUniversities(context, userInputCountry.text)
                 },
                 colors = ButtonDefaults.buttonColors(backgroundColor = primaryColor),
                 modifier = Modifier
@@ -133,12 +144,14 @@ fun UniversitiesScreen(
                                                     fontSize = 18.sp
                                                 )
                                             }
-                                            Text(
-                                                text = "State  - ${university.stateProvince}",
-                                                modifier = Modifier.padding(start = 16.dp),
-                                                color = Color.Gray,
-                                                fontSize = 18.sp
-                                            )
+                                            university.stateProvince?.let {
+                                                Text(
+                                                    text = "State  - ${university.stateProvince}",
+                                                    modifier = Modifier.padding(start = 16.dp),
+                                                    color = Color.Gray,
+                                                    fontSize = 18.sp
+                                                )
+                                            }
                                         }
                                     }
                                 }
